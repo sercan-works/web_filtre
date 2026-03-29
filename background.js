@@ -1,14 +1,9 @@
 // ATLANTIS - Service Worker (Background Script)
 
 // --- Istemci kimlik yonetimi ---
-async function getClientInfo() {
-  const data = await chrome.storage.local.get(["clientId", "clientName"]);
-  let clientId = data.clientId;
-  if (!clientId) {
-    clientId = "client_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
-    await chrome.storage.local.set({ clientId });
-  }
-  return { clientId, clientName: data.clientName || "Isimsiz" };
+// Tek imaj senaryosu: clientId saklamiyoruz, sunucu IP ile taniyor
+function getClientInfo() {
+  return { clientId: "auto" };
 }
 
 // Varsayilan storage yapisini olustur

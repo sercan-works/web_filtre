@@ -176,6 +176,10 @@
 
     <!-- ========== ISTEMCILER SEKMESI ========== -->
     <div id="tab-clients" class="tab-content">
+      <div class="log-toolbar">
+        <span id="clientCount">0 istemci</span>
+        <button class="btn btn-small btn-primary" id="clientRefresh">Yenile</button>
+      </div>
       <div class="log-table-wrap">
         <table class="log-table">
           <thead>
@@ -183,7 +187,7 @@
               <th>Istemci Adi</th>
               <th>IP Adresi</th>
               <th>Son Gorulme</th>
-              <th>Istemci ID</th>
+              <th>Islem</th>
             </tr>
           </thead>
           <tbody id="clientsBody"></tbody>

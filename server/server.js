@@ -10,6 +10,7 @@ const DATA_FILE = path.join(DATA_DIR, "rules.json");
 const LOGS_FILE = path.join(DATA_DIR, "logs.json");
 const TRAFFIC_FILE = path.join(DATA_DIR, "traffic.json");
 const ADMIN_FILE = path.join(DATA_DIR, "admin.json");
+const CLIENTS_FILE = path.join(DATA_DIR, "clients.json");
 const ADMIN_DIR = path.join(__dirname, "admin");
 
 const MAX_LOGS = 10000;
@@ -47,10 +48,29 @@ function readRules() {
 }
 function readLogs() { return readJSON(LOGS_FILE, []); }
 function readTraffic() { return readJSON(TRAFFIC_FILE, []); }
+function readClients() { return readJSON(CLIENTS_FILE, {}); } // { "ip": { name, lastSeen } }
 
 function getClientIp(req) {
-  return req.headers["x-forwarded-for"]?.split(",")[0]?.trim()
+  let ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim()
     || req.socket?.remoteAddress || "bilinmiyor";
+  // IPv6 localhost -> IPv4
+  if (ip === "::1" || ip === "::ffff:127.0.0.1") ip = "127.0.0.1";
+  if (ip.startsWith("::ffff:")) ip = ip.substring(7);
+  return ip;
+}
+
+// IP'ye gore istemci adini bul
+function getClientName(ip) {
+  const clients = readClients();
+  return (clients[ip] && clients[ip].name) || ip;
+}
+
+// Istemci son gorulme guncelle
+function touchClient(ip) {
+  const clients = readClients();
+  if (!clients[ip]) clients[ip] = { name: ip };
+  clients[ip].lastSeen = Date.now();
+  writeJSON(CLIENTS_FILE, clients);
 }
 
 function sha256(str) { return crypto.createHash("sha256").update(str).digest("hex"); }
@@ -81,14 +101,14 @@ app.post("/api/logs", (req, res) => {
   const rules = readRules();
   if (rules.logViolations === false) return res.json({ success: true, saved: false });
 
-  const { clientId, clientName, url, reason, match, pageTitle } = req.body;
+  const { url, reason, match, pageTitle } = req.body;
   const ip = getClientIp(req);
+  const clientName = getClientName(ip);
+  touchClient(ip);
 
   const entry = {
     id: "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-    timestamp: Date.now(), ip,
-    clientId: clientId || "bilinmiyor",
-    clientName: clientName || "Isimsiz",
+    timestamp: Date.now(), ip, clientName,
     url: url || "", reason: reason || "url",
     match: match || "", pageTitle: pageTitle || ""
   };
@@ -98,7 +118,7 @@ app.post("/api/logs", (req, res) => {
   if (logs.length > MAX_LOGS) logs.length = MAX_LOGS;
   writeJSON(LOGS_FILE, logs);
 
-  console.log(`[IHLAL] ${entry.clientName} (${ip}) -> ${entry.url} [${entry.reason}: ${entry.match}]`);
+  console.log(`[IHLAL] ${clientName} (${ip}) -> ${entry.url} [${entry.reason}: ${entry.match}]`);
   res.json({ success: true, saved: true });
 });
 
@@ -107,8 +127,10 @@ app.post("/api/traffic", (req, res) => {
   const rules = readRules();
   if (rules.logTraffic === false) return res.json({ success: true, saved: false, count: 0 });
 
-  const { clientId, clientName, entries } = req.body;
+  const { entries } = req.body;
   const ip = getClientIp(req);
+  const clientName = getClientName(ip);
+  touchClient(ip);
 
   if (!Array.isArray(entries) || entries.length === 0) return res.json({ success: true, count: 0 });
 
@@ -116,9 +138,7 @@ app.post("/api/traffic", (req, res) => {
   for (const e of entries) {
     traffic.unshift({
       id: "tr_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-      timestamp: e.timestamp || Date.now(), ip,
-      clientId: clientId || "bilinmiyor",
-      clientName: clientName || "Isimsiz",
+      timestamp: e.timestamp || Date.now(), ip, clientName,
       url: e.url || "", pageTitle: e.title || ""
     });
   }
@@ -222,7 +242,9 @@ app.delete("/api/rules/keyword/:id", requireAuth, (req, res) => {
 app.get("/api/logs", requireAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 100, 500);
-  const logs = readLogs();
+  const ip = req.query.ip || "";
+  let logs = readLogs();
+  if (ip) logs = logs.filter(l => l.ip === ip);
   const start = (page - 1) * limit;
   res.json({ total: logs.length, page, pages: Math.ceil(logs.length / limit), data: logs.slice(start, start + limit) });
 });
@@ -235,9 +257,9 @@ app.delete("/api/logs", requireAuth, (req, res) => {
 app.get("/api/traffic", requireAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 100, 500);
-  const clientId = req.query.clientId || "";
+  const ip = req.query.ip || "";
   let traffic = readTraffic();
-  if (clientId) traffic = traffic.filter(t => t.clientId === clientId);
+  if (ip) traffic = traffic.filter(t => t.ip === ip);
   const start = (page - 1) * limit;
   res.json({ total: traffic.length, page, pages: Math.ceil(traffic.length / limit), data: traffic.slice(start, start + limit) });
 });
@@ -247,18 +269,33 @@ app.delete("/api/traffic", requireAuth, (req, res) => {
   res.json({ success: true });
 });
 
+// --- Istemci Yonetimi (IP bazli) ---
+
+// Istemci listesi
+app.get("/api/clients", requireAuth, (req, res) => {
+  const clients = readClients();
+  res.json(Object.entries(clients).map(([ip, info]) => ({
+    ip, name: info.name || ip, lastSeen: info.lastSeen || 0
+  })));
+});
+
+// Istemci adini degistir
+app.put("/api/clients/:ip", requireAuth, (req, res) => {
+  const { name } = req.body;
+  const clients = readClients();
+  const ip = req.params.ip;
+  if (!clients[ip]) clients[ip] = {};
+  clients[ip].name = name || ip;
+  writeJSON(CLIENTS_FILE, clients);
+  res.json({ success: true, ip, name: clients[ip].name });
+});
+
 // --- Durum ---
 app.get("/api/status", requireAuth, (req, res) => {
   const rules = readRules();
   const logs = readLogs();
   const traffic = readTraffic();
-
-  const clientMap = {};
-  for (const t of [...logs.slice(0, 5000), ...traffic.slice(0, 5000)]) {
-    if (!clientMap[t.clientId]) {
-      clientMap[t.clientId] = { name: t.clientName, ip: t.ip, lastSeen: t.timestamp };
-    }
-  }
+  const clients = readClients();
 
   res.json({
     urlFilterCount: rules.urlFilters.length,
@@ -269,8 +306,8 @@ app.get("/api/status", requireAuth, (req, res) => {
     logTraffic: rules.logTraffic === true,
     totalViolations: logs.length,
     totalTraffic: traffic.length,
-    clients: Object.entries(clientMap).map(([id, info]) => ({
-      id, name: info.name, ip: info.ip, lastSeen: info.lastSeen
+    clients: Object.entries(clients).map(([ip, info]) => ({
+      ip, name: info.name || ip, lastSeen: info.lastSeen || 0
     }))
   });
 });

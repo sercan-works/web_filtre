@@ -319,13 +319,12 @@ $("changePassBtn").addEventListener("click", async () => {
 
 // -- Sunucu Ayarlari --
 async function loadServerSettings() {
-  const data = await chrome.storage.local.get(["syncMode", "serverUrl", "lastSync", "clientName"]);
+  const data = await chrome.storage.local.get(["syncMode", "serverUrl", "lastSync"]);
   const mode = data.syncMode || "local";
   const serverUrl = data.serverUrl || "";
 
   setSyncTab(mode);
   $("serverUrlInput").value = serverUrl;
-  $("clientNameInput").value = data.clientName || "";
 
   if (data.lastSync) {
     const date = new Date(data.lastSync);
@@ -365,13 +364,8 @@ $("tabServer").addEventListener("click", () => {
   loadServerSettings();
 });
 
-$("clientNameInput").addEventListener("change", () => {
-  chrome.storage.local.set({ clientName: $("clientNameInput").value.trim() });
-});
-
 $("serverSaveBtn").addEventListener("click", async () => {
   const url = $("serverUrlInput").value.trim();
-  const clientName = $("clientNameInput").value.trim();
   const info = $("serverInfo");
 
   if (!url) {
@@ -388,7 +382,7 @@ $("serverSaveBtn").addEventListener("click", async () => {
     const response = await fetch(testUrl, { signal: AbortSignal.timeout(5000) });
 
     if (response.ok) {
-      chrome.storage.local.set({ serverUrl: url, syncMode: "server", clientName }, () => {
+      chrome.storage.local.set({ serverUrl: url, syncMode: "server" }, () => {
         info.textContent = "Baglanti basarili!";
         info.style.color = "#4caf50";
         // Hemen senkronize et

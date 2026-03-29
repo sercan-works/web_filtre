@@ -210,11 +210,15 @@ async function addKw() {
 // IHLAL KAYITLARI
 // =============================================
 let violationPage = 1;
+let violationIpFilter = "";
 
-async function loadViolations(page) {
+async function loadViolations(page, ipFilter) {
   violationPage = page || 1;
+  if (ipFilter !== undefined) violationIpFilter = ipFilter;
   try {
-    const data = await api("GET", `/api/logs?page=${violationPage}&limit=50`);
+    let endpoint = `/api/logs?page=${violationPage}&limit=50`;
+    if (violationIpFilter) endpoint += `&ip=${encodeURIComponent(violationIpFilter)}`;
+    const data = await api("GET", endpoint);
     $("violationCount").textContent = data.total + " kayit";
     $("badgeViolations").textContent = data.total;
 
@@ -292,13 +296,13 @@ $("trafficClear").addEventListener("click", async () => {
 });
 
 // =============================================
-// ISTEMCILER
+// ISTEMCILER (IP bazli)
 // =============================================
 async function loadClients() {
   try {
-    const status = await api("GET", "/api/status");
-    const clients = status.clients || [];
+    const clients = await api("GET", "/api/clients");
     $("badgeClients").textContent = clients.length;
+    $("clientCount").textContent = clients.length + " istemci";
 
     const tbody = $("clientsBody");
     tbody.innerHTML = "";
@@ -308,16 +312,60 @@ async function loadClients() {
 
     for (const c of clients) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${esc(c.name)}</td>
-        <td><code>${esc(c.ip)}</code></td>
-        <td>${formatTime(c.lastSeen)}</td>
-        <td><code style="font-size:11px;color:#666">${esc(c.id)}</code></td>
-      `;
+
+      // Isim hucre - tiklaninca duzenlenebilir
+      const tdName = document.createElement("td");
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = c.name;
+      nameSpan.style.cursor = "pointer";
+      nameSpan.title = "Tikla - isim degistir";
+      nameSpan.addEventListener("click", () => {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = c.name;
+        input.style.cssText = "width:120px;padding:4px 6px;font-size:13px;";
+        tdName.innerHTML = "";
+        tdName.appendChild(input);
+        input.focus();
+
+        async function save() {
+          const newName = input.value.trim() || c.ip;
+          await api("PUT", "/api/clients/" + encodeURIComponent(c.ip), { name: newName });
+          loadClients();
+        }
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+        input.addEventListener("blur", save);
+      });
+      tdName.appendChild(nameSpan);
+
+      const tdIp = document.createElement("td");
+      tdIp.innerHTML = `<code>${esc(c.ip)}</code>`;
+
+      const tdSeen = document.createElement("td");
+      tdSeen.textContent = formatTime(c.lastSeen);
+
+      const tdAction = document.createElement("td");
+      const filterBtn = document.createElement("button");
+      filterBtn.className = "btn btn-small btn-primary";
+      filterBtn.textContent = "Loglari Gor";
+      filterBtn.style.fontSize = "11px";
+      filterBtn.addEventListener("click", () => {
+        // Ihlal sekmesine gec ve IP'ye gore filtrele
+        document.querySelector('[data-tab="violations"]').click();
+        loadViolations(1, c.ip);
+      });
+      tdAction.appendChild(filterBtn);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdIp);
+      tr.appendChild(tdSeen);
+      tr.appendChild(tdAction);
       tbody.appendChild(tr);
     }
   } catch (e) { console.error("Istemciler yuklenemedi:", e); }
 }
+
+$("clientRefresh").addEventListener("click", loadClients);
 
 // =============================================
 // Yardimcilar
