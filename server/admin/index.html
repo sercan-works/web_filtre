@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLANTIS - Yonetim Paneli</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- Giris / Kurulum -->
+  <div id="authView" class="view">
+    <div class="auth-card">
+      <h1 class="brand">ATLANTIS</h1>
+      <p class="subtitle" id="authSubtitle">Yonetim Paneli</p>
+      <div class="form-group">
+        <input type="password" id="authPass" placeholder="Sifre">
+      </div>
+      <div id="authConfirmGroup" class="form-group" style="display:none;">
+        <input type="password" id="authPassConfirm" placeholder="Sifre Tekrar">
+      </div>
+      <div class="error" id="authError"></div>
+      <button class="btn btn-primary btn-full" id="authBtn">Giris Yap</button>
+    </div>
+  </div>
+
+  <!-- Ana Panel -->
+  <div id="mainView" class="view" style="display:none;">
+    <!-- Header -->
+    <header class="top-bar">
+      <h1 class="brand">ATLANTIS</h1>
+      <div class="top-actions">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Aktif</span>
+        <button class="btn btn-small btn-logout" id="logoutBtn">Cikis</button>
+      </div>
+    </header>
+
+    <!-- Ust Sekmeler -->
+    <nav class="main-tabs">
+      <button class="main-tab active" data-tab="rules">Kurallar</button>
+      <button class="main-tab" data-tab="violations">Ihlal Kayitlari <span class="badge" id="badgeViolations">0</span></button>
+      <button class="main-tab" data-tab="traffic">Ag Trafigi <span class="badge" id="badgeTraffic">0</span></button>
+      <button class="main-tab" data-tab="clients">Istemciler <span class="badge" id="badgeClients">0</span></button>
+    </nav>
+
+    <!-- ========== KURALLAR SEKMESI ========== -->
+    <div id="tab-rules" class="tab-content active">
+      <div class="dashboard">
+        <!-- Sol: Kontroller -->
+        <div class="panel">
+          <div class="panel-header"><h2>Genel Ayarlar</h2></div>
+          <div class="panel-body">
+            <div class="setting-row">
+              <span>Filtreleme</span>
+              <label class="switch"><input type="checkbox" id="enabledToggle" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <span>Ihlal Kayitlari</span>
+              <label class="switch"><input type="checkbox" id="logViolationsToggle" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <span>Ag Trafigi Kaydi</span>
+              <label class="switch"><input type="checkbox" id="logTrafficToggle"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Engelleme Aksiyonu</label>
+              <div class="tab-row">
+                <button class="tab active" id="tabPage">Engelleme Sayfasi</button>
+                <button class="tab" id="tabRedirect">URL'ye Yonlendir</button>
+              </div>
+              <div id="redirectBox" style="display:none;">
+                <div class="inline-form">
+                  <input type="text" id="redirectUrlInput" placeholder="https://ornek.com">
+                  <button class="btn btn-primary" id="redirectSaveBtn">Kaydet</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="stats">
+              <div class="stat-item">
+                <span class="stat-num" id="statUrl">0</span>
+                <span class="stat-label">URL Filtresi</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="statKw">0</span>
+                <span class="stat-label">Anahtar Kelime</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orta: URL Filtreleri -->
+        <div class="panel">
+          <div class="panel-header"><h2>URL Filtreleri</h2></div>
+          <div class="panel-body">
+            <div class="inline-form">
+              <input type="text" id="urlInput" placeholder="ornek.com veya *kelime*">
+              <button class="btn btn-primary" id="urlAddBtn">Ekle</button>
+            </div>
+            <ul class="rule-list" id="urlList"></ul>
+            <p class="empty-msg" id="urlEmpty">Henuz URL filtresi eklenmedi.</p>
+          </div>
+        </div>
+
+        <!-- Sag: Kelime Filtreleri -->
+        <div class="panel">
+          <div class="panel-header"><h2>Anahtar Kelime Filtreleri</h2></div>
+          <div class="panel-body">
+            <div class="inline-form">
+              <input type="text" id="kwInput" placeholder="Engellenecek kelime">
+              <button class="btn btn-primary" id="kwAddBtn">Ekle</button>
+            </div>
+            <ul class="rule-list" id="kwList"></ul>
+            <p class="empty-msg" id="kwEmpty">Henuz anahtar kelime eklenmedi.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== IHLAL KAYITLARI SEKMESI ========== -->
+    <div id="tab-violations" class="tab-content">
+      <div class="log-toolbar">
+        <span id="violationCount">0 kayit</span>
+        <div>
+          <button class="btn btn-small btn-primary" id="violationRefresh">Yenile</button>
+          <button class="btn btn-small btn-danger" id="violationClear">Temizle</button>
+        </div>
+      </div>
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Zaman</th>
+              <th>Istemci</th>
+              <th>IP</th>
+              <th>Engellenen URL</th>
+              <th>Sebep</th>
+              <th>Eslesen Kural</th>
+            </tr>
+          </thead>
+          <tbody id="violationBody"></tbody>
+        </table>
+        <p class="empty-msg" id="violationEmpty">Henuz ihlal kaydi yok.</p>
+      </div>
+      <div class="pagination" id="violationPagination"></div>
+    </div>
+
+    <!-- ========== AG TRAFIGI SEKMESI ========== -->
+    <div id="tab-traffic" class="tab-content">
+      <div class="log-toolbar">
+        <span id="trafficCount">0 kayit</span>
+        <div>
+          <button class="btn btn-small btn-primary" id="trafficRefresh">Yenile</button>
+          <button class="btn btn-small btn-danger" id="trafficClear">Temizle</button>
+        </div>
+      </div>
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Zaman</th>
+              <th>Istemci</th>
+              <th>IP</th>
+              <th>Ziyaret Edilen URL</th>
+              <th>Sayfa Basligi</th>
+            </tr>
+          </thead>
+          <tbody id="trafficBody"></tbody>
+        </table>
+        <p class="empty-msg" id="trafficEmpty">Henuz trafik kaydi yok.</p>
+      </div>
+      <div class="pagination" id="trafficPagination"></div>
+    </div>
+
+    <!-- ========== ISTEMCILER SEKMESI ========== -->
+    <div id="tab-clients" class="tab-content">
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Istemci Adi</th>
+              <th>IP Adresi</th>
+              <th>Son Gorulme</th>
+              <th>Istemci ID</th>
+            </tr>
+          </thead>
+          <tbody id="clientsBody"></tbody>
+        </table>
+        <p class="empty-msg" id="clientsEmpty">Henuz baglanan istemci yok.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-info">
+      Extension ayari: Sunucu adresi olarak <code id="serverAddr"></code> girin
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

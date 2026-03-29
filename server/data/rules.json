@@ -1,0 +1,15 @@
+{
+  "urlFilters": [
+    {
+      "id": "uf_1774812616292_pc0y",
+      "pattern": "tiktok.com",
+      "createdAt": 1774812616292
+    }
+  ],
+  "keywordFilters": [],
+  "blockAction": "redirect",
+  "redirectUrl": "https://google.com",
+  "extensionEnabled": true,
+  "logViolations": true,
+  "logTraffic": false
+}

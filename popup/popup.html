@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLANTIS</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Sifre Olusturma (ilk calistirma) -->
+  <div id="setupView" class="view" style="display:none;">
+    <div class="header">
+      <h1 class="brand">ATLANTIS</h1>
+      <p class="subtitle">Sifre Olusturun</p>
+    </div>
+    <div class="form-group">
+      <input type="password" id="setupPass" placeholder="Sifre" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <input type="password" id="setupPassConfirm" placeholder="Sifre Tekrar" autocomplete="new-password">
+    </div>
+    <div class="error" id="setupError"></div>
+    <button class="btn btn-primary btn-full" id="setupBtn">Sifre Olustur</button>
+  </div>
+
+  <!-- Giris -->
+  <div id="loginView" class="view" style="display:none;">
+    <div class="header">
+      <h1 class="brand">ATLANTIS</h1>
+      <p class="subtitle">Giris Yapin</p>
+    </div>
+    <div class="form-group">
+      <input type="password" id="loginPass" placeholder="Sifre" autocomplete="current-password">
+    </div>
+    <div class="error" id="loginError"></div>
+    <button class="btn btn-primary btn-full" id="loginBtn">Giris Yap</button>
+  </div>
+
+  <!-- Yonetim Paneli -->
+  <div id="mainView" class="view" style="display:none;">
+    <div class="header-row">
+      <h1 class="brand">ATLANTIS</h1>
+      <button class="btn btn-small btn-lock" id="lockBtn" title="Kilitle">Kilitle</button>
+    </div>
+
+    <!-- Acik/Kapali Toggle -->
+    <div class="toggle-row">
+      <span id="toggleLabel">Filtreleme Aktif</span>
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Engelleme Aksiyonu Tablari -->
+    <div class="section">
+      <h2>Engelleme Aksiyonu</h2>
+      <div class="tab-row">
+        <button class="tab active" id="tabBlockPage" data-action="page">Engelleme Sayfasi</button>
+        <button class="tab" id="tabRedirect" data-action="redirect">URL'ye Yonlendir</button>
+      </div>
+      <div id="redirectSettings" class="redirect-settings" style="display:none;">
+        <div class="form-group">
+          <input type="text" id="redirectUrlInput" placeholder="https://ornek.com">
+        </div>
+        <button class="btn btn-primary btn-full" id="redirectSaveBtn">Kaydet</button>
+        <p class="redirect-info" id="redirectInfo"></p>
+      </div>
+    </div>
+
+    <!-- URL Filtreleri -->
+    <div class="section">
+      <h2>URL Filtreleri <span class="count" id="urlCount">(0)</span></h2>
+      <div class="add-row">
+        <input type="text" id="urlInput" placeholder="ornek.com veya *kelime*">
+        <button class="btn btn-add" id="urlAddBtn">Ekle</button>
+      </div>
+      <ul class="filter-list" id="urlList"></ul>
+      <p class="empty-msg" id="urlEmpty">Henuz URL filtresi eklenmedi.</p>
+    </div>
+
+    <!-- Anahtar Kelime Filtreleri -->
+    <div class="section">
+      <h2>Anahtar Kelime Filtreleri <span class="count" id="kwCount">(0)</span></h2>
+      <div class="add-row">
+        <input type="text" id="kwInput" placeholder="Engellenecek kelime">
+        <button class="btn btn-add" id="kwAddBtn">Ekle</button>
+      </div>
+      <ul class="filter-list" id="kwList"></ul>
+      <p class="empty-msg" id="kwEmpty">Henuz anahtar kelime eklenmedi.</p>
+    </div>
+
+    <!-- Sunucu Ayarlari -->
+    <div class="section">
+      <h2>Sunucu Baglantisi</h2>
+      <div class="tab-row">
+        <button class="tab active" id="tabLocal" data-sync="local">Lokal</button>
+        <button class="tab" id="tabServer" data-sync="server">Sunucu</button>
+      </div>
+      <div id="serverSettings" class="redirect-settings" style="display:none;">
+        <div class="form-group">
+          <input type="text" id="clientNameInput" placeholder="Istemci adi (ornek: PC-01)">
+        </div>
+        <div class="form-group">
+          <input type="text" id="serverUrlInput" placeholder="http://192.168.1.100:3000">
+        </div>
+        <div class="server-actions">
+          <button class="btn btn-primary" id="serverSaveBtn">Baglan</button>
+          <button class="btn btn-secondary" id="serverSyncBtn">Senkronize Et</button>
+        </div>
+        <p class="redirect-info" id="serverInfo"></p>
+        <p class="sync-time" id="syncTime"></p>
+      </div>
+    </div>
+
+    <!-- Sifre Degistir -->
+    <div class="section">
+      <button class="btn btn-secondary btn-full" id="changePassToggle">Sifreyi Degistir</button>
+      <div id="changePassForm" style="display:none;">
+        <div class="form-group">
+          <input type="password" id="oldPass" placeholder="Mevcut Sifre">
+        </div>
+        <div class="form-group">
+          <input type="password" id="newPass" placeholder="Yeni Sifre">
+        </div>
+        <div class="form-group">
+          <input type="password" id="newPassConfirm" placeholder="Yeni Sifre Tekrar">
+        </div>
+        <div class="error" id="changePassError"></div>
+        <button class="btn btn-primary btn-full" id="changePassBtn">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../lib/crypto.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
