@@ -84,6 +84,8 @@ async function showMain() {
   $("authView").style.display = "none";
   $("mainView").style.display = "block";
   await loadAll();
+  // Istemci verisini de hemen yukle (clients.json'u doldurur)
+  loadClients();
 }
 
 async function loadAll() {

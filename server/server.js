@@ -297,6 +297,14 @@ app.get("/api/status", requireAuth, (req, res) => {
   const traffic = readTraffic();
   const clients = readClients();
 
+  // Loglardan/trafikten eksik istemcileri otomatik ekle
+  for (const entry of [...logs.slice(0, 5000), ...traffic.slice(0, 5000)]) {
+    if (entry.ip && !clients[entry.ip]) {
+      clients[entry.ip] = { name: entry.ip, lastSeen: entry.timestamp };
+    }
+  }
+  writeJSON(CLIENTS_FILE, clients);
+
   res.json({
     urlFilterCount: rules.urlFilters.length,
     keywordFilterCount: rules.keywordFilters.length,
