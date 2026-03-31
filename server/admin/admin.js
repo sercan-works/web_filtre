@@ -49,6 +49,7 @@ function setupMainTabs() {
       if (tab.dataset.tab === "violations") loadViolations();
       if (tab.dataset.tab === "traffic") loadTraffic();
       if (tab.dataset.tab === "clients") loadClients();
+      if (tab.dataset.tab === "hardware") loadHardware();
     });
   });
 }
@@ -368,6 +369,156 @@ async function loadClients() {
 }
 
 $("clientRefresh").addEventListener("click", loadClients);
+
+// =============================================
+// DONANIM & AG
+// =============================================
+async function loadHardware() {
+  try {
+    const data = await api("GET", "/api/hardware");
+    $("badgeHardware").textContent = data.length;
+    $("hwCount").textContent = data.length + " cihaz";
+
+    const grid = $("hwGrid");
+    grid.innerHTML = "";
+
+    if (data.length === 0) { $("hwEmpty").style.display = "block"; return; }
+    $("hwEmpty").style.display = "none";
+
+    for (const item of data) {
+      const hw = item.hardware || {};
+      const cpu = hw.cpu || {};
+      const ram = hw.ram || {};
+      const speed = item.networkSpeed || {};
+      const disks = hw.disks || [];
+      const net = hw.network || {};
+      const nets = net.interfaces || net || [];
+      const totalSent = net.totalSent || 0;
+      const totalRecv = net.totalRecv || 0;
+      const dlSpeed = net.downloadSpeed || 0;
+      const ulSpeed = net.uploadSpeed || 0;
+
+      const card = document.createElement("div");
+      card.className = "hw-card";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "hw-card-header";
+      header.innerHTML = `<span class="hw-name">${esc(item.clientName)}</span><span class="hw-ip">${esc(item.ip)}</span>`;
+
+      // Body
+      const body = document.createElement("div");
+      body.className = "hw-card-body";
+
+      // OS + Hostname
+      body.innerHTML += hwRow("Bilgisayar", esc(hw.hostname || "-"));
+      body.innerHTML += hwRow("Isletim Sistemi", esc(hw.os || "-"));
+      body.innerHTML += hwRow("Calisma Suresi", formatUptime(hw.uptime));
+
+      // CPU
+      body.innerHTML += hwRow("CPU", esc(cpu.model || "-"));
+      body.innerHTML += hwRow("Cekirdek", cpu.cores || "-");
+      body.innerHTML += hwBar("CPU Kullanim", cpu.usage || 0);
+
+      // RAM
+      body.innerHTML += hwBar("RAM Kullanim", ram.percent || 0,
+        formatBytes(ram.used) + " / " + formatBytes(ram.total));
+
+      // GPU
+      body.innerHTML += hwRow("GPU", esc(hw.gpu || "-"));
+
+      // Disks
+      for (const d of disks) {
+        body.innerHTML += hwBar(d.letter + " Disk", d.percent || 0,
+          formatBytes(d.used) + " / " + formatBytes(d.total));
+      }
+
+      // Network interfaces
+      const netList = Array.isArray(nets) ? nets : [];
+      for (const n of netList) {
+        body.innerHTML += hwRow("Ag (" + esc(n.ip) + ")", esc(n.speed));
+      }
+
+      // Toplam upload/download
+      body.innerHTML += hwRow("Toplam Download", formatBytes(totalRecv));
+      body.innerHTML += hwRow("Toplam Upload", formatBytes(totalSent));
+
+      // Anlik hiz (son 60sn)
+      body.innerHTML += `<div class="hw-speed">
+        <div style="flex:1;text-align:center;">
+          <span class="hw-speed-value" style="color:#4caf50">${formatBytesSpeed(dlSpeed)}</span>
+          <span class="hw-speed-unit">Download/s</span>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <span class="hw-speed-value" style="color:#2196f3">${formatBytesSpeed(ulSpeed)}</span>
+          <span class="hw-speed-unit">Upload/s</span>
+        </div>
+      </div>`;
+
+      // Sunucu baglanti hizi
+      body.innerHTML += `<div class="hw-speed" style="border-top:none;margin-top:0;padding-top:4px;">
+        <span class="hw-speed-value">${speed.mbps || 0}</span>
+        <span class="hw-speed-unit">Mbps<br>sunucu baglantisi</span>
+      </div>`;
+
+      // Updated
+      const updated = document.createElement("div");
+      updated.className = "hw-updated";
+      updated.textContent = "Son guncelleme: " + formatTime(item.timestamp);
+
+      card.appendChild(header);
+      card.appendChild(body);
+      card.appendChild(updated);
+      grid.appendChild(card);
+    }
+  } catch (e) { console.error("Donanim yuklenemedi:", e); }
+}
+
+function hwRow(label, value) {
+  return `<div class="hw-row"><span class="hw-label">${label}</span><span class="hw-value">${value}</span></div>`;
+}
+
+function hwBar(label, percent, detail) {
+  const color = percent > 85 ? "red" : percent > 60 ? "yellow" : "green";
+  const detailText = detail ? detail : percent + "%";
+  return `<div class="hw-bar-wrap">
+    <div class="hw-bar-label"><span>${label}</span><span>${detailText}</span></div>
+    <div class="hw-bar"><div class="hw-bar-fill ${color}" style="width:${percent}%"></div></div>
+  </div>`;
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return "0";
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 1) return gb.toFixed(1) + " GB";
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return mb.toFixed(0) + " MB";
+  const kb = bytes / 1024;
+  return kb.toFixed(0) + " KB";
+}
+
+function formatBytesSpeed(bytesPerSec) {
+  if (!bytesPerSec || bytesPerSec <= 0) return "0";
+  const mb = bytesPerSec / (1024 * 1024);
+  if (mb >= 1) return mb.toFixed(1) + " MB";
+  const kb = bytesPerSec / 1024;
+  if (kb >= 1) return kb.toFixed(0) + " KB";
+  return bytesPerSec + " B";
+}
+
+function formatUptime(seconds) {
+  if (!seconds) return "-";
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  let s = "";
+  if (d > 0) s += d + "g ";
+  if (h > 0) s += h + "sa ";
+  s += m + "dk";
+  return s;
+}
+
+$("hwRefresh").addEventListener("click", loadHardware);
 
 // =============================================
 // Yardimcilar

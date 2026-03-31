@@ -499,6 +499,120 @@ input:focus {
   background: #333;
 }
 
+/* Hardware Grid */
+.hw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  padding: 0 32px 16px;
+}
+
+.hw-card {
+  background: #2b2b2b;
+  border: 1px solid #3b3b3b;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.hw-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #3b3b3b;
+}
+
+.hw-card-header .hw-name {
+  font-weight: 600;
+  color: #FFD700;
+  font-size: 14px;
+}
+
+.hw-card-header .hw-ip {
+  font-size: 12px;
+  color: #888;
+  font-family: "Consolas", monospace;
+}
+
+.hw-card-body {
+  padding: 14px 16px;
+}
+
+.hw-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.hw-row .hw-label {
+  color: #999;
+}
+
+.hw-row .hw-value {
+  color: #e0e0e0;
+  font-family: "Consolas", monospace;
+  font-size: 12px;
+}
+
+.hw-bar-wrap {
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.hw-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 3px;
+}
+
+.hw-bar {
+  height: 6px;
+  background: #1e1e1e;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hw-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.hw-bar-fill.green { background: #4caf50; }
+.hw-bar-fill.yellow { background: #FFD700; }
+.hw-bar-fill.red { background: #e74c3c; }
+
+.hw-speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid #333;
+  margin-top: 8px;
+}
+
+.hw-speed-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+.hw-speed-unit {
+  font-size: 12px;
+  color: #888;
+}
+
+.hw-updated {
+  font-size: 11px;
+  color: #555;
+  text-align: right;
+  padding: 6px 16px 10px;
+}
+
 /* Footer */
 .footer-info {
   text-align: center;

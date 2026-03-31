@@ -11,6 +11,7 @@ const LOGS_FILE = path.join(DATA_DIR, "logs.json");
 const TRAFFIC_FILE = path.join(DATA_DIR, "traffic.json");
 const ADMIN_FILE = path.join(DATA_DIR, "admin.json");
 const CLIENTS_FILE = path.join(DATA_DIR, "clients.json");
+const HARDWARE_FILE = path.join(DATA_DIR, "hardware.json");
 const ADMIN_DIR = path.join(__dirname, "admin");
 
 const MAX_LOGS = 10000;
@@ -49,6 +50,7 @@ function readRules() {
 function readLogs() { return readJSON(LOGS_FILE, []); }
 function readTraffic() { return readJSON(TRAFFIC_FILE, []); }
 function readClients() { return readJSON(CLIENTS_FILE, {}); } // { "ip": { name, lastSeen } }
+function readHardware() { return readJSON(HARDWARE_FILE, {}); } // { "ip": { hardware, networkSpeed, timestamp } }
 
 function getClientIp(req) {
   let ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim()
@@ -267,6 +269,50 @@ app.get("/api/traffic", requireAuth, (req, res) => {
 app.delete("/api/traffic", requireAuth, (req, res) => {
   writeJSON(TRAFFIC_FILE, []);
   res.json({ success: true });
+});
+
+// --- Donanim & Ag (Agent) ---
+
+// Speedtest: agent download hizi olcmek icin ~1MB veri indirir
+app.get("/api/speedtest", (req, res) => {
+  const size = 1024 * 1024; // 1MB
+  res.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Length": size });
+  res.end(Buffer.alloc(size, 0));
+});
+
+// Agent donanim raporu gonderir
+app.post("/api/hardware", (req, res) => {
+  const ip = getClientIp(req);
+  const { hardware, networkSpeed, timestamp } = req.body;
+
+  const hw = readHardware();
+  hw[ip] = { hardware: hardware || {}, networkSpeed: networkSpeed || {}, timestamp: timestamp || Date.now() };
+  writeJSON(HARDWARE_FILE, hw);
+
+  // Istemciyi de guncelle
+  touchClient(ip);
+  const clients = readClients();
+  if (hardware && hardware.hostname && clients[ip] && clients[ip].name === ip) {
+    clients[ip].name = hardware.hostname;
+    writeJSON(CLIENTS_FILE, clients);
+  }
+
+  console.log(`[HW] ${ip} - CPU: ${hardware?.cpu?.usage}% RAM: ${hardware?.ram?.percent}% Hiz: ${networkSpeed?.mbps} Mbps`);
+  res.json({ success: true });
+});
+
+// Admin: donanim bilgilerini getir
+app.get("/api/hardware", requireAuth, (req, res) => {
+  const hw = readHardware();
+  const clients = readClients();
+
+  const result = Object.entries(hw).map(([ip, data]) => ({
+    ip,
+    clientName: (clients[ip] && clients[ip].name) || ip,
+    ...data
+  }));
+
+  res.json(result);
 });
 
 // --- Istemci Yonetimi (IP bazli) ---

@@ -42,6 +42,7 @@
       <button class="main-tab" data-tab="violations">Ihlal Kayitlari <span class="badge" id="badgeViolations">0</span></button>
       <button class="main-tab" data-tab="traffic">Ag Trafigi <span class="badge" id="badgeTraffic">0</span></button>
       <button class="main-tab" data-tab="clients">Istemciler <span class="badge" id="badgeClients">0</span></button>
+      <button class="main-tab" data-tab="hardware">Donanim & Ag <span class="badge" id="badgeHardware">0</span></button>
     </nav>
 
     <!-- ========== KURALLAR SEKMESI ========== -->
@@ -194,6 +195,16 @@
         </table>
         <p class="empty-msg" id="clientsEmpty">Henuz baglanan istemci yok.</p>
       </div>
+    </div>
+
+    <!-- ========== DONANIM & AG SEKMESI ========== -->
+    <div id="tab-hardware" class="tab-content">
+      <div class="log-toolbar">
+        <span id="hwCount">0 cihaz</span>
+        <button class="btn btn-small btn-primary" id="hwRefresh">Yenile</button>
+      </div>
+      <div class="hw-grid" id="hwGrid"></div>
+      <p class="empty-msg" id="hwEmpty">Henuz donanim verisi yok. Istemcilerde agent calistirin.</p>
     </div>
 
     <!-- Footer -->
